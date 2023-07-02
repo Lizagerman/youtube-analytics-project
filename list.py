@@ -1,56 +1,71 @@
-import datetime
 import os
 import isodate
+from datetime import timedelta
+
 from googleapiclient.discovery import build
 
 
 class PlayList:
-    __API_KEY: str = os.getenv('API_KEY')
-    __youtube = build('youtube', 'v3', developerKey=__API_KEY)
+    api_key: str = os.getenv('API_KEY')
+    youtube = build('youtube', 'v3', developerKey=api_key)
 
-    def __init__(self, playlist_id):
-        self.__playlist_id = playlist_id
-        self.__playlists_info = self.__youtube.playlists().list(id=playlist_id, part='contentDetails,snippet',
-                                                                maxResults=50, ).execute()
+    def __init__(self, playlist_id: str) -> None:
+        self.playlist_id = playlist_id
 
-        self.__each_video_info = self.__youtube.playlistItems().list(playlistId=self.__playlist_id,
-                                                                     part='contentDetails', maxResults=50,).execute()
-        self.__video_ids: list[str] = [video['contentDetails']['videoId'] for video in self.__each_video_info['items']]
-
-        self.__video_response = self.__youtube.videos().list(part='contentDetails, statistics', id=','.join(
-            self.__video_ids)).execute()
-
-        self.__title = self.__playlists_info['items'][0]['snippet']['title']
-        self.__url = f"https://www.youtube.com/playlist?list={self.__playlist_id}"
+    def print_info(self) -> None:
+        playlist_videos = self.youtube.playlistItems().list(playlistId=self.playlist_id,
+                                                            part='contentDetails',
+                                                            maxResults=50,
+                                                            ).execute()
+        print(playlist_videos)
 
     @property
     def title(self):
-        return self.__title
+        self.playlist_info = self.youtube.playlists().list(id=self.playlist_id, part='contentDetails,snippet',
+                                                   maxResults=50, ).execute()
+
+        return self.playlist_info['items'][0]['snippet']['title']
 
     @property
     def url(self):
-        return self.__url
+        return f'https://www.youtube.com/playlist?list={self.playlist_id}'
 
     @property
     def total_duration(self):
-        total_duration = datetime.timedelta()
-        video_response = self.__video_response
+        total = timedelta(seconds=0)
+        playlist_videos = self.youtube.playlistItems().list(playlistId=self.playlist_id,
+                                                            part='contentDetails',
+                                                            maxResults=50,
+                                                            ).execute()
+
+        video_ids: list[str] = [video['contentDetails']['videoId'] for video in playlist_videos['items']]
+
+        video_response = self.youtube.videos().list(part='contentDetails,statistics',
+                                                    id=','.join(video_ids)
+                                                    ).execute()
 
         for video in video_response['items']:
             iso_8601_duration = video['contentDetails']['duration']
             duration = isodate.parse_duration(iso_8601_duration)
-            total_duration += duration
-        return total_duration
+            total += duration
+
+        return total
 
     def show_best_video(self):
-        pop_list = self.__video_response
-        max_likes = 0
-        max_likes_video = None
+        top_video = ''
+        top_likes = 0
+        playlist_videos = self.youtube.playlistItems().list(playlistId=self.playlist_id,
+                                                            part='contentDetails',
+                                                            maxResults=50,
+                                                            ).execute()
 
-        for i in range(5):
-            like_count = int(pop_list['items'][i]['statistics']['likeCount'])
-            if like_count > max_likes:
-                max_likes = like_count
-                max_likes_video = pop_list['items'][i]['id']
-        return f"https://youtu.be/{max_likes_video}"
-    
+        video_ids: list[str] = [video['contentDetails']['videoId'] for video in playlist_videos['items']]
+
+        video_response = self.youtube.videos().list(part='contentDetails,statistics',
+                                                    id=','.join(video_ids)
+                                                    ).execute()
+
+        for video in video_response['items']:
+            if int(video['statistics']['likeCount']) > top_likes:
+                top_video = video['id']
+        return f'https://youtu.be/{top_video}'
