@@ -13,10 +13,11 @@ class PlayList:
         self.playlist_id = playlist_id
 
     def print_info(self) -> None:
-        playlist_videos = self.youtube.playlistItems().list(playlistId=self.playlist_id,
-                                                            part='contentDetails',
-                                                            maxResults=50,
-                                                            ).execute()
+        playlist_videos = self.youtube.playlistItems().list(
+            playlistId=self.playlist_id,
+            part='contentDetails',
+            maxResults=50,
+        ).execute()
         print(playlist_videos)
 
     @property
@@ -33,10 +34,11 @@ class PlayList:
     @property
     def total_duration(self):
         total = timedelta(seconds=0)
-        playlist_videos = self.youtube.playlistItems().list(playlistId=self.playlist_id,
-                                                            part='contentDetails',
-                                                            maxResults=50,
-                                                            ).execute()
+        playlist_videos = self.youtube.playlistItems().list(
+            playlistId=self.playlist_id,
+            part='contentDetails',
+            maxResults=50,
+        ).execute()
 
         video_ids: list[str] = [video['contentDetails']['videoId'] for video in playlist_videos['items']]
 
@@ -54,10 +56,11 @@ class PlayList:
     def show_best_video(self):
         top_video = ''
         top_likes = 0
-        playlist_videos = self.youtube.playlistItems().list(playlistId=self.playlist_id,
-                                                            part='contentDetails',
-                                                            maxResults=50,
-                                                            ).execute()
+        playlist_videos = self.youtube.playlistItems().list(
+            playlistId=self.playlist_id,
+            part='contentDetails',
+            maxResults=50,
+        ).execute()
 
         video_ids: list[str] = [video['contentDetails']['videoId'] for video in playlist_videos['items']]
 
